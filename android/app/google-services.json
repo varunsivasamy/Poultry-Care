@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1055477226529",
+    "project_id": "poultrycare-70b88",
+    "storage_bucket": "poultrycare-70b88.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1055477226529:android:5f9b14675f564838ea9760",
+        "android_client_info": {
+          "package_name": "com.example.poultry_farm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTW5dMwxBqFdOL7CT0793HRj0KSQsVC20"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
