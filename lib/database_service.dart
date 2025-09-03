@@ -30,8 +30,10 @@ class DatabaseService {
       _firestore.collection('users').doc(currentUserId).collection('products');
 
   // Vaccinations Collection
-  CollectionReference get _vaccinationsCollection =>
-      _firestore.collection('users').doc(currentUserId).collection('vaccinations');
+  CollectionReference get _vaccinationsCollection => _firestore
+      .collection('users')
+      .doc(currentUserId)
+      .collection('vaccinations');
 
   // Feed Info Collection
   CollectionReference get _feedInfoCollection =>
@@ -41,8 +43,16 @@ class DatabaseService {
   Future<void> addNote(String note) async {
     if (currentUserId == null) return;
 
+    // Add to notes collection
     await _notesCollection.add({
       'content': note,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Also add to records collection for recent activity
+    await _recordsCollection.add({
+      'type': 'note',
+      'content': 'Added note: $note',
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -68,7 +78,20 @@ class DatabaseService {
   Future<void> deleteNote(String noteId) async {
     if (currentUserId == null) return;
 
+    // Get the note content before deleting
+    final noteDoc = await _notesCollection.doc(noteId).get();
+    final noteData = noteDoc.data() as Map<String, dynamic>?;
+    final noteContent = noteData?['content'] ?? '';
+
+    // Delete from notes collection
     await _notesCollection.doc(noteId).delete();
+
+    // Add deletion record to recent activity
+    await _recordsCollection.add({
+      'type': 'note_deleted',
+      'content': 'Deleted note: $noteContent',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Add Record
@@ -121,8 +144,16 @@ class DatabaseService {
   Future<void> addEvent(Map<String, dynamic> event) async {
     if (currentUserId == null) return;
 
+    // Add to events collection
     await _eventsCollection.add({
       ...event,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Also add to records collection for recent activity
+    await _recordsCollection.add({
+      'type': 'event',
+      'content': 'Created event: ${event['title'] ?? 'Untitled Event'}',
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -138,7 +169,20 @@ class DatabaseService {
   Future<void> deleteEvent(String eventId) async {
     if (currentUserId == null) return;
 
+    // Get the event title before deleting
+    final eventDoc = await _eventsCollection.doc(eventId).get();
+    final eventData = eventDoc.data() as Map<String, dynamic>?;
+    final eventTitle = eventData?['title'] ?? 'Untitled Event';
+
+    // Delete from events collection
     await _eventsCollection.doc(eventId).delete();
+
+    // Add deletion record to recent activity
+    await _recordsCollection.add({
+      'type': 'event_deleted',
+      'content': 'Deleted event: $eventTitle',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Add Disease
@@ -149,17 +193,27 @@ class DatabaseService {
       ...disease,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // Add to recent activity
+    await _recordsCollection.add({
+      'type': 'disease',
+      'content': 'Added disease: ${disease['name'] ?? 'Untitled Disease'}',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Get Diseases Stream
   Stream<QuerySnapshot> getDiseasesStream() {
     if (currentUserId == null) return const Stream.empty();
 
-    return _diseasesCollection.orderBy('createdAt', descending: true).snapshots();
+    return _diseasesCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   // Update Disease
-  Future<void> updateDisease(String diseaseId, Map<String, dynamic> disease) async {
+  Future<void> updateDisease(
+      String diseaseId, Map<String, dynamic> disease) async {
     if (currentUserId == null) return;
 
     await _diseasesCollection.doc(diseaseId).update({
@@ -183,17 +237,27 @@ class DatabaseService {
       ...product,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // Add to recent activity
+    await _recordsCollection.add({
+      'type': 'product',
+      'content': 'Added product: ${product['name'] ?? 'Untitled Product'}',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Get Products Stream
   Stream<QuerySnapshot> getProductsStream() {
     if (currentUserId == null) return const Stream.empty();
 
-    return _productsCollection.orderBy('createdAt', descending: true).snapshots();
+    return _productsCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   // Update Product
-  Future<void> updateProduct(String productId, Map<String, dynamic> product) async {
+  Future<void> updateProduct(
+      String productId, Map<String, dynamic> product) async {
     if (currentUserId == null) return;
 
     await _productsCollection.doc(productId).update({
@@ -217,17 +281,28 @@ class DatabaseService {
       ...vaccination,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // Add to recent activity
+    await _recordsCollection.add({
+      'type': 'vaccination',
+      'content':
+          'Added vaccination: ${vaccination['name'] ?? 'Untitled Vaccination'}',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Get Vaccinations Stream
   Stream<QuerySnapshot> getVaccinationsStream() {
     if (currentUserId == null) return const Stream.empty();
 
-    return _vaccinationsCollection.orderBy('createdAt', descending: true).snapshots();
+    return _vaccinationsCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   // Update Vaccination
-  Future<void> updateVaccination(String vaccinationId, Map<String, dynamic> vaccination) async {
+  Future<void> updateVaccination(
+      String vaccinationId, Map<String, dynamic> vaccination) async {
     if (currentUserId == null) return;
 
     await _vaccinationsCollection.doc(vaccinationId).update({
@@ -251,17 +326,28 @@ class DatabaseService {
       ...feedInfo,
       'createdAt': FieldValue.serverTimestamp(),
     });
+
+    // Add to recent activity
+    await _recordsCollection.add({
+      'type': 'feed_info',
+      'content':
+          'Added feed info: ${feedInfo['title'] ?? 'Untitled Feed Info'}',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Get Feed Info Stream
   Stream<QuerySnapshot> getFeedInfoStream() {
     if (currentUserId == null) return const Stream.empty();
 
-    return _feedInfoCollection.orderBy('createdAt', descending: true).snapshots();
+    return _feedInfoCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   // Update Feed Info
-  Future<void> updateFeedInfo(String feedInfoId, Map<String, dynamic> feedInfo) async {
+  Future<void> updateFeedInfo(
+      String feedInfoId, Map<String, dynamic> feedInfo) async {
     if (currentUserId == null) return;
 
     await _feedInfoCollection.doc(feedInfoId).update({
@@ -326,7 +412,7 @@ class DatabaseService {
 
     try {
       Map<String, dynamic> summary = {};
-      
+
       // Get counts for each collection
       final diseasesSnapshot = await _diseasesCollection.get();
       final productsSnapshot = await _productsCollection.get();

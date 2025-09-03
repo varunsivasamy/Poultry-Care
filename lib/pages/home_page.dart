@@ -49,304 +49,584 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Poultry Care'), centerTitle: true),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Carousel
-            FlutterCarousel(
-              options: FlutterCarouselOptions(
-                height: 180.0,
-                showIndicator: true,
-                slideIndicator: CircularSlideIndicator(),
-                autoPlay: true,
-                enlargeCenterPage: true,
-              ),
-              items: imageUrls.map((url) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                      decoration: const BoxDecoration(color: Colors.amber),
-                      child: Image.asset(url, fit: BoxFit.cover),
-                    );
-                  },
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Padding(
-              padding: EdgeInsets.all(12.0),
-              child: Text(
-                'Welcome to Poultry Care!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            // Dashboard Statistics
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Quick Statistics',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      FutureBuilder<Map<String, dynamic>?>(
-                        future: _databaseService.getUserStats(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-
-                          final stats = snapshot.data ?? {};
-                          final totalChicks = stats['totalChicks'] ?? 0;
-                          final totalDead = stats['totalDead'] ?? 0;
-                          final liveChicks = totalChicks - totalDead;
-
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: _StatCard(
-                                  'Total Chicks',
-                                  totalChicks.toString(),
-                                  Icons.pets,
-                                  Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _StatCard(
-                                  'Live Chicks',
-                                  liveChicks.toString(),
-                                  Icons.favorite,
-                                  Colors.green,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _StatCard(
-                                  'Deceased',
-                                  totalDead.toString(),
-                                  Icons.remove_circle,
-                                  Colors.red,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.teal.shade50,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.teal.shade600,
+                      Colors.teal.shade400,
                     ],
                   ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
                 ),
-              ),
-            ),
-
-            const Padding(
-              padding: EdgeInsets.only(left: 12.0),
-              child: Text(
-                'Featured Categories',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            SizedBox(
-              height: 120,
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _databaseService.getDashboardSummary(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final summary = snapshot.data ?? {};
-
-                  return ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: categories.map((cat) {
-                      String count = '0';
-                      String subtitle = 'No data';
-
-                      switch (cat['title']) {
-                        case 'Feed Info':
-                          count = (summary['feedInfoCount'] ?? 0).toString();
-                          if (summary['latestFeedInfo'] != null) {
-                            subtitle = summary['latestFeedInfo']['title'] ??
-                                'Latest info';
-                          }
-                          break;
-                        case 'Vaccination':
-                          count =
-                              (summary['vaccinationsCount'] ?? 0).toString();
-                          if (summary['latestVaccination'] != null) {
-                            subtitle = summary['latestVaccination']['name'] ??
-                                'Latest vaccine';
-                          }
-                          break;
-                        case 'Diseases':
-                          count = (summary['diseasesCount'] ?? 0).toString();
-                          if (summary['latestDisease'] != null) {
-                            subtitle = summary['latestDisease']['name'] ??
-                                'Latest disease';
-                          }
-                          break;
-                        case 'Products':
-                          count = (summary['productsCount'] ?? 0).toString();
-                          if (summary['latestProduct'] != null) {
-                            subtitle = summary['latestProduct']['name'] ??
-                                'Latest product';
-                          }
-                          break;
-                      }
-
-                      return GestureDetector(
-                        onTap: () =>
-                            _navigateToCategory(context, cat['title']!),
-                        child: Container(
-                          width: 120,
-                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.teal.shade100,
+                            color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.teal.shade300),
                           ),
+                          child: const Icon(
+                            Icons.pets,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                cat['icon']!,
-                                style: const TextStyle(fontSize: 28),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                cat['title']!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
+                              const Text(
+                                'Welcome Back!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
-                                'Count: $count',
+                                'Manage your poultry farm efficiently',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                subtitle,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.grey[600],
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
-                      );
-                    }).toList(),
-                  );
-                },
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Recent Activity
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recent Activity',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: _databaseService.getRecordsStream(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return const Text('Error loading recent activity');
-                          }
-
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-
-                          final docs = snapshot.data?.docs ?? [];
-                          if (docs.isEmpty) {
-                            return const Text('No recent activity');
-                          }
-
-                          // Show only the latest 3 records
-                          final recentDocs = docs.take(3).toList();
-
-                          return Column(
-                            children: recentDocs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              return ListTile(
-                                leading: const Icon(Icons.record_voice_over),
-                                title: Text(data['content'] ?? ''),
-                                subtitle: data['createdAt'] != null
-                                    ? Text(_formatTimestamp(data['createdAt']))
-                                    : null,
-                                dense: true,
-                              );
-                            }).toList(),
+              // Image Carousel
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: FlutterCarousel(
+                    options: FlutterCarouselOptions(
+                      height: 200.0,
+                      showIndicator: true,
+                      slideIndicator: CircularSlideIndicator(),
+                      autoPlay: true,
+                      enlargeCenterPage: true,
+                    ),
+                    items: imageUrls.map((url) {
+                      return Builder(
+                        builder: (BuildContext context) {
+                          return Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: Image.asset(url, fit: BoxFit.cover),
                           );
                         },
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
-            ),
 
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MoreOptionsPage()),
-                  );
-                },
-                child: const Text('More Options'),
+              const SizedBox(height: 24),
+
+              // Dashboard Statistics
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.analytics_outlined,
+                              color: Colors.teal.shade600,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Quick Statistics',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        FutureBuilder<Map<String, dynamic>?>(
+                          future: _databaseService.getUserStats(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            final stats = snapshot.data ?? {};
+                            final totalChicks = stats['totalChicks'] ?? 0;
+                            final totalDead = stats['totalDead'] ?? 0;
+                            final liveChicks = totalChicks - totalDead;
+
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: _StatCard(
+                                    'Total Chicks',
+                                    totalChicks.toString(),
+                                    Icons.pets,
+                                    Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _StatCard(
+                                    'Live Chicks',
+                                    liveChicks.toString(),
+                                    Icons.favorite,
+                                    Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _StatCard(
+                                    'Deceased',
+                                    totalDead.toString(),
+                                    Icons.remove_circle,
+                                    Colors.red,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 24),
+
+              // Featured Categories
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.category_outlined,
+                      color: Colors.teal.shade600,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Featured Categories',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                height: 140,
+                child: FutureBuilder<Map<String, dynamic>>(
+                  future: _databaseService.getDashboardSummary(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final summary = snapshot.data ?? {};
+
+                    return ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: categories.map((cat) {
+                        String count = '0';
+                        String subtitle = 'No data';
+
+                        switch (cat['title']) {
+                          case 'Feed Info':
+                            count = (summary['feedInfoCount'] ?? 0).toString();
+                            if (summary['latestFeedInfo'] != null) {
+                              subtitle = summary['latestFeedInfo']['title'] ??
+                                  'Latest info';
+                            }
+                            break;
+                          case 'Vaccination':
+                            count =
+                                (summary['vaccinationsCount'] ?? 0).toString();
+                            if (summary['latestVaccination'] != null) {
+                              subtitle = summary['latestVaccination']['name'] ??
+                                  'Latest vaccine';
+                            }
+                            break;
+                          case 'Diseases':
+                            count = (summary['diseasesCount'] ?? 0).toString();
+                            if (summary['latestDisease'] != null) {
+                              subtitle = summary['latestDisease']['name'] ??
+                                  'Latest disease';
+                            }
+                            break;
+                          case 'Products':
+                            count = (summary['productsCount'] ?? 0).toString();
+                            if (summary['latestProduct'] != null) {
+                              subtitle = summary['latestProduct']['name'] ??
+                                  'Latest product';
+                            }
+                            break;
+                        }
+
+                        return GestureDetector(
+                          onTap: () =>
+                              _navigateToCategory(context, cat['title']!),
+                          child: Container(
+                            width: 130,
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.teal.shade50,
+                                  Colors.teal.shade100,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.teal.shade200,
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    cat['icon']!,
+                                    style: const TextStyle(fontSize: 32),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    cat['title']!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.shade600,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      count,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    subtitle,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey[600],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              const SizedBox(height: 20),
+
+              // Recent Activity
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.history,
+                              color: Colors.teal.shade600,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Recent Activity',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: _databaseService.getRecordsStream(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return const Text(
+                                  'Error loading recent activity');
+                            }
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            final docs = snapshot.data?.docs ?? [];
+                            if (docs.isEmpty) {
+                              return Container(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.inbox_outlined,
+                                      size: 48,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'No recent activity',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            // Show only the latest 3 records
+                            final recentDocs = docs.take(3).toList();
+
+                            return Column(
+                              children: recentDocs.map((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                // Get appropriate icon and color based on activity type
+                                IconData activityIcon = Icons.record_voice_over;
+                                Color activityColor = Colors.teal.shade600;
+
+                                switch (data['type']) {
+                                  case 'note':
+                                    activityIcon = Icons.note_alt;
+                                    activityColor = Colors.blue.shade600;
+                                    break;
+                                  case 'event':
+                                    activityIcon = Icons.event;
+                                    activityColor = Colors.orange.shade600;
+                                    break;
+                                  case 'disease':
+                                    activityIcon = Icons.medical_services;
+                                    activityColor = Colors.red.shade600;
+                                    break;
+                                  case 'vaccination':
+                                    activityIcon = Icons.vaccines;
+                                    activityColor = Colors.green.shade600;
+                                    break;
+                                  case 'product':
+                                    activityIcon = Icons.inventory;
+                                    activityColor = Colors.purple.shade600;
+                                    break;
+                                  case 'feed_info':
+                                    activityIcon = Icons.restaurant;
+                                    activityColor = Colors.brown.shade600;
+                                    break;
+                                  case 'chicks_added':
+                                    activityIcon = Icons.pets;
+                                    activityColor = Colors.green.shade600;
+                                    break;
+                                  case 'death_registered':
+                                    activityIcon = Icons.remove_circle;
+                                    activityColor = Colors.red.shade600;
+                                    break;
+                                  default:
+                                    activityIcon = Icons.record_voice_over;
+                                    activityColor = Colors.teal.shade600;
+                                }
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: activityColor.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          activityIcon,
+                                          color: activityColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              data['content'] ?? '',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (data['createdAt'] != null)
+                                              Text(
+                                                _formatTimestamp(
+                                                    data['createdAt']),
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // More Options Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MoreOptionsPage()),
+                      );
+                    },
+                    icon: const Icon(Icons.more_horiz),
+                    label: const Text('More Options'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
@@ -372,29 +652,56 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             title,
             style: TextStyle(
               fontSize: 12,
-              color: color.withValues(alpha: 0.8),
+              color: color.withOpacity(0.8),
+              fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
           ),
