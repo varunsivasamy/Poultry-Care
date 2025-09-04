@@ -7,10 +7,14 @@ import 'firebase_options.dart';
 import 'pages/home_page.dart';
 import 'pages/notes_page.dart';
 import 'pages/reminders_page.dart';
+import 'pages/records_page.dart';
 import 'pages/login_page.dart';
 import 'notification_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'pages/settings_page.dart';
+import 'pages/about_page.dart';
+import 'pages/support_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -189,6 +193,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomePage(),
     const NotesPage(),
     const RemindersPage(),
+    const RecordsPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -248,6 +253,11 @@ class _MainScreenState extends State<MainScreen> {
               activeIcon: Icon(Icons.alarm),
               label: 'Reminders',
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.record_voice_over_outlined),
+              activeIcon: Icon(Icons.record_voice_over),
+              label: 'Records',
+            ),
           ],
         ),
       ),
@@ -264,12 +274,33 @@ class MoreOptionsPage extends StatelessWidget {
       appBar: AppBar(title: const Text('More Options')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
-        children: const [
-          ListTile(leading: Icon(Icons.settings), title: Text('Settings')),
-          ListTile(leading: Icon(Icons.info), title: Text('About')),
+        children: [
           ListTile(
-            leading: Icon(Icons.contact_mail),
-            title: Text('Contact Support'),
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: const Text('About'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutPage()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.contact_mail),
+            title: const Text('Contact Support'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SupportPage()),
+            ),
           ),
         ],
       ),

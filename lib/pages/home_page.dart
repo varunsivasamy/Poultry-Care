@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 24),
 
-              // Dashboard Statistics
+              // Dashboard Statistics (redesigned)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
@@ -213,33 +213,27 @@ class _HomePageState extends State<HomePage> {
                             final totalDead = stats['totalDead'] ?? 0;
                             final liveChicks = totalChicks - totalDead;
 
-                            return Row(
+                            return Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
                               children: [
-                                Expanded(
-                                  child: _StatCard(
-                                    'Total Chicks',
-                                    totalChicks.toString(),
-                                    Icons.pets,
-                                    Colors.blue,
-                                  ),
+                                _QuickStatTile(
+                                  title: 'Total Chicks',
+                                  value: totalChicks,
+                                  color: Colors.blue,
+                                  icon: Icons.pets,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _StatCard(
-                                    'Live Chicks',
-                                    liveChicks.toString(),
-                                    Icons.favorite,
-                                    Colors.green,
-                                  ),
+                                _QuickStatTile(
+                                  title: 'Live Chicks',
+                                  value: liveChicks,
+                                  color: Colors.green,
+                                  icon: Icons.favorite,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _StatCard(
-                                    'Deceased',
-                                    totalDead.toString(),
-                                    Icons.remove_circle,
-                                    Colors.red,
-                                  ),
+                                _QuickStatTile(
+                                  title: 'Deceased',
+                                  value: totalDead,
+                                  color: Colors.red,
+                                  icon: Icons.remove_circle,
                                 ),
                               ],
                             );
@@ -277,7 +271,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 16),
 
               SizedBox(
-                height: 140,
+                height: 170,
                 child: FutureBuilder<Map<String, dynamic>>(
                   future: _databaseService.getDashboardSummary(),
                   builder: (context, snapshot) {
@@ -704,6 +698,68 @@ class _StatCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickStatTile extends StatelessWidget {
+  final String title;
+  final int value;
+  final Color color;
+  final IconData icon;
+
+  const _QuickStatTile({
+    required this.title,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const Spacer(),
+              Text(
+                value.toString(),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: color.withOpacity(0.9),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

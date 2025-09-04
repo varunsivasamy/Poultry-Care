@@ -380,12 +380,12 @@ class DatabaseService {
         totalDead += int.tryParse(data['dead']?.toString() ?? '0') ?? 0;
       }
 
-      // Update user document
-      await _firestore.collection('users').doc(currentUserId).update({
+      // Create or update user document with merge
+      await _firestore.collection('users').doc(currentUserId).set({
         'totalChicks': totalChicks,
         'totalDead': totalDead,
         'lastUpdated': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error updating user stats: $e');
     }

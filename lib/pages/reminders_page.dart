@@ -11,7 +11,6 @@ class RemindersPage extends StatefulWidget {
 }
 
 class _RemindersPageState extends State<RemindersPage> {
-  final TextEditingController _recordController = TextEditingController();
   final TextEditingController _eventController = TextEditingController();
   final TextEditingController _chicksController = TextEditingController();
   final TextEditingController _deadController = TextEditingController();
@@ -34,17 +33,6 @@ class _RemindersPageState extends State<RemindersPage> {
       setState(() {
         _userStats = stats;
       });
-    }
-  }
-
-  void _addOrEditRecord() async {
-    if (_recordController.text.trim().isNotEmpty) {
-      await _databaseService.addRecord({
-        'type': 'record',
-        'content': _recordController.text.trim(),
-      });
-      _recordController.clear();
-      _loadUserStats();
     }
   }
 
@@ -80,10 +68,7 @@ class _RemindersPageState extends State<RemindersPage> {
     _loadUserStats();
   }
 
-  void _deleteRecord(String recordId) async {
-    await _databaseService.deleteRecord(recordId);
-    _loadUserStats();
-  }
+  // Records moved to RecordsPage
 
   Future<void> _pickDateTime() async {
     final DateTime now = DateTime.now();
@@ -117,12 +102,28 @@ class _RemindersPageState extends State<RemindersPage> {
       final String eventTitle = _eventController.text.trim();
 
       // Fallback: schedule 1 minute from now if user didn't pick a time
-      final DateTime scheduled =
+      DateTime scheduled =
           _selectedDateTime ?? DateTime.now().add(const Duration(minutes: 1));
+
+      // Ensure the scheduled time is in the future (grace: 5 seconds)
+      final DateTime now = DateTime.now();
+      if (!scheduled.isAfter(now.add(const Duration(seconds: 5)))) {
+        scheduled = now.add(const Duration(minutes: 1));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Selected time was in the past. Scheduled for +1 minute.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
 
       final event = {
         'title': eventTitle,
         'scheduledAt': Timestamp.fromDate(scheduled),
+        'createdAt': Timestamp.fromDate(DateTime.now()),
       };
 
       await _databaseService.addEvent(event);
@@ -234,7 +235,7 @@ class _RemindersPageState extends State<RemindersPage> {
 
               const SizedBox(height: 20),
 
-              // Dashboard Section
+              // Dashboard Section (redesigned)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
@@ -262,32 +263,52 @@ class _RemindersPageState extends State<RemindersPage> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _CircleProgressBar(
-                                percentage: livePercent,
-                                total: totalChicks,
-                                live: liveChicks,
-                                dead: totalDead,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _StatItem(
-                                      'Total Chicks', totalChicks, Colors.blue),
-                                  const SizedBox(height: 12),
-                                  _StatItem(
-                                      'Live Chicks', liveChicks, Colors.green),
-                                  const SizedBox(height: 12),
-                                  _StatItem('Deceased', totalDead, Colors.red),
-                                ],
-                              ),
-                            ),
-                          ],
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double ringSize =
+                                constraints.maxWidth > 420 ? 160 : 120;
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: ringSize + 20,
+                                  child: _CircleProgressBar(
+                                    percentage: livePercent,
+                                    total: totalChicks,
+                                    live: liveChicks,
+                                    dead: totalDead,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: [
+                                      _StatTile(
+                                        label: 'Total Chicks',
+                                        value: totalChicks,
+                                        color: Colors.blue,
+                                        icon: Icons.pets,
+                                      ),
+                                      _StatTile(
+                                        label: 'Live Chicks',
+                                        value: liveChicks,
+                                        color: Colors.green,
+                                        icon: Icons.favorite,
+                                      ),
+                                      _StatTile(
+                                        label: 'Deceased',
+                                        value: totalDead,
+                                        color: Colors.red,
+                                        icon: Icons.remove_circle,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -404,180 +425,7 @@ class _RemindersPageState extends State<RemindersPage> {
 
               const SizedBox(height: 20),
 
-              // Records Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.record_voice_over_outlined,
-                              color: Colors.teal.shade600,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Records',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _recordController,
-                                decoration: InputDecoration(
-                                  labelText: 'Add record',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton.icon(
-                              onPressed: _addOrEditRecord,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.teal.shade600,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 200,
-                          child: StreamBuilder<QuerySnapshot>(
-                            stream: _databaseService.getRecordsStream(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError) {
-                                return const Center(
-                                    child: Text('Something went wrong'));
-                              }
-
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-
-                              if (!snapshot.hasData ||
-                                  snapshot.data!.docs.isEmpty) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.inbox_outlined,
-                                        size: 48,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'No records yet',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-
-                              return ListView.builder(
-                                itemCount: snapshot.data!.docs.length,
-                                itemBuilder: (context, index) {
-                                  var doc = snapshot.data!.docs[index];
-                                  var record = doc.data() as Map<String, dynamic>;
-
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.grey.shade200,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.teal.shade100,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(
-                                            Icons.record_voice_over,
-                                            color: Colors.teal.shade600,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                record['content'] ?? '',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              if (record['createdAt'] != null)
-                                                Text(
-                                                  _formatTimestamp(record['createdAt']),
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade600,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.delete,
-                                            color: Colors.red.shade400,
-                                          ),
-                                          onPressed: () => _deleteRecord(doc.id),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // Records moved to its own tab
 
               const SizedBox(height: 20),
 
@@ -628,8 +476,9 @@ class _RemindersPageState extends State<RemindersPage> {
                             ElevatedButton.icon(
                               onPressed: _pickDateTime,
                               icon: const Icon(Icons.access_time),
-                              label: Text(
-                                _selectedDateTime == null ? 'Pick time' : 'Change'),
+                              label: Text(_selectedDateTime == null
+                                  ? 'Pick time'
+                                  : 'Change'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange.shade600,
                                 foregroundColor: Colors.white,
@@ -720,7 +569,8 @@ class _RemindersPageState extends State<RemindersPage> {
                                 itemCount: snapshot.data!.docs.length,
                                 itemBuilder: (context, index) {
                                   var doc = snapshot.data!.docs[index];
-                                  var event = doc.data() as Map<String, dynamic>;
+                                  var event =
+                                      doc.data() as Map<String, dynamic>;
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
@@ -738,7 +588,8 @@ class _RemindersPageState extends State<RemindersPage> {
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: Colors.orange.shade100,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: Icon(
                                             Icons.event,
@@ -749,7 +600,8 @@ class _RemindersPageState extends State<RemindersPage> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 event['title'] ?? '',
@@ -757,9 +609,11 @@ class _RemindersPageState extends State<RemindersPage> {
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
-                                              if (event['createdAt'] != null)
+                                              if (event['scheduledAt'] != null)
                                                 Text(
-                                                  _formatTimestamp(event['createdAt']),
+                                                  'When: ' +
+                                                      _formatTimestamp(
+                                                          event['scheduledAt']),
                                                   style: TextStyle(
                                                     color: Colors.grey.shade600,
                                                     fontSize: 12,
@@ -821,21 +675,26 @@ class _CircleProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double baseSize = 140;
     return SizedBox(
-      width: 100,
-      height: 100,
+      width: baseSize,
+      height: baseSize,
       child: Stack(
         children: [
           Center(
             child: SizedBox(
-              width: 80,
-              height: 80,
+              width: baseSize - 24,
+              height: baseSize - 24,
               child: CircularProgressIndicator(
                 value: percentage / 100,
-                strokeWidth: 8,
+                strokeWidth: 10,
                 backgroundColor: Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  percentage > 50 ? Colors.green : Colors.orange,
+                  percentage >= 70
+                      ? Colors.green
+                      : percentage >= 40
+                          ? Colors.orange
+                          : Colors.red,
                 ),
               ),
             ),
@@ -847,14 +706,14 @@ class _CircleProgressBar extends StatelessWidget {
                 Text(
                   '${percentage.toStringAsFixed(1)}%',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   'Live',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     color: Colors.grey[600],
                   ),
                 ),
@@ -867,42 +726,62 @@ class _CircleProgressBar extends StatelessWidget {
   }
 }
 
-class _StatItem extends StatelessWidget {
+// Removed unused _StatItem widget to clear lints.
+
+class _StatTile extends StatelessWidget {
   final String label;
   final int value;
   final Color color;
+  final IconData icon;
 
-  const _StatItem(this.label, this.value, this.color);
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: 160,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const Spacer(),
+              Text(
+                value.toString(),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(height: 8),
           Text(
-            '$label: $value',
+            label,
             style: TextStyle(
+              fontSize: 12,
+              color: color.withOpacity(0.9),
               fontWeight: FontWeight.w600,
-              color: color,
             ),
           ),
         ],
